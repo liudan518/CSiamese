@@ -1,0 +1,21 @@
+TY  - JOUR
+AU  - Liu, Dan
+AU  - Zhong, Shisheng
+AU  - Lin, Lin
+AU  - Zhao, Minghang
+AU  - Fu, Xuyun
+AU  - Liu, Xueyun
+PY  - 2023
+DA  - 2023/08/01
+TI  - CSiamese: a novel semi-supervised anomaly detection framework for gas turbines via reconstruction similarity
+JO  - Neural Computing and Applications
+SP  - 16403
+EP  - 16427
+VL  - 35
+IS  - 22
+AB  - The main problem in data-driven anomaly detection of gas turbines is that the monitoring data consists of only a very small number of abnormal samples with the overwhelming majority of normal samples. To address this problem, this paper develops a novel semi-supervised anomaly detection framework, namely CSiamese, and the parameters of the framework are optimized only using normal samples, with the ultimate purpose of improving the anomaly detection performance on imbalanced data sets. First, the convolutional auto-encoder is used to learn the reconstructed representation of the input sample. Second, the Siamese network is selected to learn to measure the similarity between the input and its reconstructed representation under noise conditions. Besides, a new loss function is developed by improving the contrastive loss, namely triangle loss, and can reduce the risk of collapsing solutions of the Siamese network when only using positive sample pairs. Third, maximum likelihood estimation is used to set the proper detection threshold to separate abnormal samples from normal samples. Finally, the effectiveness of the developed CSiamese has been evaluated using the real monitoring data of gas turbines and a public CIFAR-10 data set.
+SN  - 1433-3058
+UR  - https://doi.org/10.1007/s00521-023-08507-y
+DO  - 10.1007/s00521-023-08507-y
+ID  - Liu2023
+ER  - 

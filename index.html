@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>CSiamese — Learn normal. Catch the rest.</title>
+<meta content="CSiamese is a semi-supervised anomaly detection framework for gas turbines: a convolutional auto-encoder learns normal reconstructions, a Siamese network learns reconstruction similarity, and maximum likelihood sets the threshold." name="description"/>
+<meta content="CSiamese — Learn normal. Catch the rest." property="og:title"/>
+<meta content="A reconstruction-similarity framework for gas-turbine anomaly detection, trained on normal data alone." property="og:description"/>
+<meta content="website" property="og:type"/>
+<meta content="#081426" name="theme-color"/>
+<meta content="light" name="color-scheme"/>
+<link href="favicon.svg" rel="icon" type="image/svg+xml"/>
+<style>
+:root{
+  --paper:#f4f1e9;
+  --paper-2:#ebe6da;
+  --white:#fffdf8;
+  --ink:#111210;
+  --ink-2:#242521;
+  --muted:#6d6a61;
+  --faint:#969084;
+  --line:#d7d1c3;
+  --line-dark:#3a3a33;
+  --blue:#2f6bff;
+  --violet:#7a5cff;
+  --pink:#ff4f7b;
+  --orange:#ff9f43;
+  --red:#f04a2d;
+  --prism:linear-gradient(100deg,#2f6bff 0%,#7a5cff 33%,#ff4f7b 65%,#ff9f43 100%);
+  --display:"Inter","Segoe UI Variable Display","Segoe UI",Helvetica,Arial,sans-serif;
+  --body:"Inter","Segoe UI Variable Text","Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono","Cascadia Mono","Cascadia Code",Consolas,monospace;
+  --max:1240px;
+  --r:20px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--body);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit}
+button{font:inherit}
+::selection{background:#111210;color:#fffdf8}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 28px}
+.prism-rule{height:4px;background:var(--prism)}
+.eyebrow{
+  display:flex;align-items:center;gap:10px;margin:0;
+  font-family:var(--mono);font-size:10px;line-height:1.4;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+}
+.eyebrow::before{content:"";width:25px;height:1px;background:currentColor;flex:0 0 auto}
+.eyebrow.light{color:#b9b4a7}
+.mono{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.soft{color:#8c877b}
+.hot{color:var(--red)}
+
+/* ---------- nav ---------- */
+.site-nav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(244,241,233,.9);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+}
+.nav-inner{height:72px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-size:16px;font-weight:700;letter-spacing:-.045em;white-space:nowrap}
+.brand-mark{
+  width:28px;height:28px;border-radius:7px;background:var(--ink);color:var(--paper);
+  display:grid;place-items:center;font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:0;
+}
+.brand-badge{
+  font-family:var(--mono);font-size:9px;font-weight:400;letter-spacing:.06em;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:3px 7px;margin-left:2px;
+}
+.nav-links{display:flex;align-items:center;gap:26px}
+.nav-links a{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:var(--muted);transition:color .2s ease}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{
+  display:inline-flex;align-items:center;gap:8px;padding:10px 15px;border:1px solid var(--ink);
+  border-radius:999px;text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap;
+  transition:background .2s ease,color .2s ease;
+}
+.nav-cta:hover{background:var(--ink);color:var(--paper)}
+
+/* ---------- hero ---------- */
+.hero{position:relative;padding:80px 0 56px;isolation:isolate;overflow:hidden}
+.hero::before{
+  content:"";position:absolute;z-index:-1;right:-10%;top:-120px;width:720px;height:720px;border-radius:50%;
+  background:radial-gradient(circle,rgba(122,92,255,.10),rgba(255,79,123,.05) 42%,transparent 70%);
+  filter:blur(20px);pointer-events:none;
+}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.78fr);gap:62px;align-items:end}
+.hero-copy{min-width:0}
+h1{
+  margin:22px 0 24px;max-width:820px;
+  font-family:var(--display);font-size:clamp(3.8rem,7.5vw,7.4rem);
+  font-weight:700;line-height:.88;letter-spacing:-.072em;
+  overflow-wrap:break-word;
+}
+h1 .soft{display:inline}
+.paper-title{
+  margin:0 0 18px;max-width:640px;
+  font-size:17px;line-height:1.45;font-weight:550;letter-spacing:-.018em;
+  color:var(--ink-2);overflow-wrap:anywhere;
+}
+.paper-title span{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px}
+.authors{margin:0 0 5px;font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.affil{margin:0;font-size:11.5px;line-height:1.6;color:var(--muted);max-width:610px}
+.cta-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:28px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  min-height:44px;padding:12px 18px;border-radius:999px;border:1px solid transparent;
+  text-decoration:none;font-size:12.5px;font-weight:600;line-height:1;
+  transition:transform .2s ease,background .2s ease,color .2s ease,border-color .2s ease;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn-dark{background:var(--ink);color:var(--paper)}
+.btn-dark:hover{background:#2a2b26}
+.btn-line{border-color:#bdb6a6;color:var(--ink);background:rgba(255,255,255,.2)}
+.btn-line:hover{border-color:var(--ink);background:rgba(255,255,255,.55)}
+.btn .arrow{font-size:14px;line-height:1}
+.text-link{
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  text-decoration:none;color:var(--muted);padding:12px 8px;border-bottom:1px solid var(--line);
+}
+.text-link:hover{color:var(--ink);border-color:var(--ink)}
+.hero-visual{min-width:0;display:flex;flex-direction:column;gap:16px}
+.figure-card{
+  margin:0;padding:11px;background:var(--white);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:0 22px 70px rgba(28,24,16,.09);
+}
+.figure-top,.figure-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-family:var(--mono);font-size:9px;line-height:1.4;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+}
+.figure-top{padding:2px 3px 10px}
+.figure-foot{padding:10px 3px 2px}
+.figure-top .tag{display:inline-flex;align-items:center;gap:7px}
+.figure-top .tag::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--prism)}
+.figure-card img{width:100%;height:auto;border-radius:11px;border:1px solid #e5dfd2;background:#fff}
+.visual-note{
+  margin:0;padding:2px 0 2px 14px;border-left:2px solid transparent;
+  border-image:var(--prism) 1;font-size:12px;line-height:1.6;color:var(--muted);
+}
+.visual-note b{color:var(--ink);font-weight:600}
+
+/* ---------- stats ---------- */
+.stats{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:46px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.stat{padding:22px 24px;border-left:1px solid var(--line);min-width:0}
+.stat:first-child{border-left:0;padding-left:0}
+.stat b{display:block;font-family:var(--display);font-size:clamp(1.45rem,2.9vw,2.25rem);font-weight:650;line-height:1;letter-spacing:-.055em;margin-bottom:7px}
+.stat span{display:block;font-family:var(--mono);font-size:9px;line-height:1.45;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* ---------- sections ---------- */
+.section{padding:112px 0;border-top:1px solid var(--line);scroll-margin-top:72px}
+.section-head{display:grid;grid-template-columns:230px minmax(0,1fr);gap:44px;align-items:start;margin-bottom:54px}
+.section-head h2{
+  grid-column:2;margin:0;max-width:900px;
+  font-family:var(--display);font-size:clamp(2.7rem,5.5vw,4.9rem);
+  font-weight:650;line-height:.94;letter-spacing:-.062em;
+  text-wrap:balance;
+}
+.section-head .lede{grid-column:2;margin:22px 0 0;max-width:660px;font-size:17px;line-height:1.62;color:#55524a}
+.section-head .lede strong{color:var(--ink);font-weight:600}
+
+/* ---------- problem ---------- */
+.problem-grid{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:72px;align-items:start}
+.stat-stack{border-top:1px solid var(--line)}
+.big-stat{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:20px 0 18px;border-bottom:1px solid var(--line)}
+.big-stat b{font-family:var(--display);font-size:clamp(4.1rem,7.4vw,6.8rem);font-weight:650;line-height:.76;letter-spacing:-.075em}
+.big-stat span{max-width:120px;padding-bottom:4px;font-family:var(--mono);font-size:9px;line-height:1.5;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:right}
+.ratio{display:flex;align-items:center;gap:12px;padding:17px 0;font-size:12px;color:var(--muted)}
+.ratio b{font-family:var(--mono);font-size:10px;letter-spacing:.04em;font-weight:500;color:var(--ink);background:var(--paper-2);border:1px solid var(--line);border-radius:999px;padding:5px 9px;white-space:nowrap}
+.problem-copy{min-width:0}
+.problem-copy p{margin:0 0 18px;font-size:15px;line-height:1.7;color:#4f4c44}
+.problem-copy p strong{color:var(--ink);font-weight:600}
+.dot-field{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:6px;margin:34px 0 14px;max-width:620px}
+.dot-field i{display:block;width:100%;aspect-ratio:1;border-radius:50%;background:#cdc6b7}
+.dot-field i.is-hot{background:var(--red);box-shadow:0 0 0 4px rgba(240,74,45,.13)}
+.dot-caption{display:flex;justify-content:space-between;gap:24px;max-width:620px;font-family:var(--mono);font-size:9px;line-height:1.5;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.dot-caption span:last-child{text-align:right}
+.pullquote{
+  margin:46px 0 0;padding:20px 0 20px 24px;border-left:3px solid;
+  border-image:var(--prism) 1;max-width:720px;
+  font-family:var(--display);font-size:clamp(1.45rem,2.7vw,2.15rem);font-weight:500;
+  line-height:1.24;letter-spacing:-.038em;color:var(--ink);
+}
+.pullquote span{display:block;margin-top:12px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:400}
+
+/* ---------- method ---------- */
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}
+.step{padding:24px 30px 0 0;border-right:1px solid var(--line);min-width:0}
+.step:nth-child(2){padding-left:30px}
+.step:nth-child(3){padding-left:30px;border-right:0;padding-right:0}
+.step-num{display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted)}
+.step-num::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--line)}
+.step h3{font-family:var(--display);font-size:clamp(1.35rem,2.4vw,1.8rem);line-height:1.1;letter-spacing:-.045em;font-weight:620;margin:34px 0 12px}
+.step p{margin:0;font-size:14px;line-height:1.68;color:#56534b}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
+.tags span{font-family:var(--mono);font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 7px;background:rgba(255,255,255,.35)}
+.split-media{
+  display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:44px;align-items:center;
+  margin-top:56px;padding:22px;border:1px solid var(--line);border-radius:24px;background:rgba(255,253,248,.5);
+}
+.split-media figure{margin:0}
+.split-media img{width:100%;height:auto;border-radius:13px;border:1px solid #e4ded1;background:#fff}
+.split-media figcaption{margin-top:10px;font-family:var(--mono);font-size:9px;line-height:1.55;letter-spacing:.04em;color:var(--muted)}
+.split-copy h3{font-family:var(--display);font-size:clamp(1.8rem,3.4vw,2.85rem);line-height:.98;letter-spacing:-.052em;font-weight:620;margin:16px 0 16px}
+.split-copy p{margin:0 0 14px;font-size:14px;line-height:1.7;color:#55524a}
+.mini-list{list-style:none;margin:18px 0 0;padding:0;border-top:1px solid var(--line)}
+.mini-list li{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted)}
+.mini-list b{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--ink);text-align:right}
+.framework{
+  display:grid;grid-template-columns:minmax(0,1.16fr) minmax(0,.84fr);gap:46px;align-items:start;
+  margin-top:44px;padding:24px;border:1px solid var(--line);border-radius:24px;background:rgba(255,253,248,.55);
+}
+.framework-figure{margin:0;min-width:0}
+.framework-figure img{width:100%;height:auto;border:1px solid #e4ded1;border-radius:13px;background:#fff}
+.framework-figure figcaption{margin-top:10px;font-family:var(--mono);font-size:9px;line-height:1.55;letter-spacing:.04em;color:var(--muted)}
+.framework-copy{min-width:0;padding:6px 2px 0}
+.framework-copy h3{font-family:var(--display);font-size:clamp(1.9rem,3.6vw,3rem);line-height:.98;letter-spacing:-.055em;font-weight:620;margin:16px 0 16px}
+.framework-copy p{margin:0 0 14px;font-size:14px;line-height:1.7;color:#55524a}
+.spec-list{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;margin:22px 0 0;border-top:1px solid var(--line)}
+.spec-list div{padding:11px 0;border-bottom:1px solid var(--line);min-width:0}
+.spec-list dt{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.spec-list dd{margin:3px 0 0;font-size:12px;line-height:1.45;color:var(--ink)}
+.band{
+  position:relative;isolation:isolate;overflow:hidden;
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:44px;align-items:center;
+  margin-top:44px;padding:42px;border-radius:26px;background:var(--ink);color:var(--paper);
+}
+.band::before{
+  content:"";position:absolute;z-index:-1;right:-15%;bottom:-45%;width:620px;height:620px;border-radius:50%;
+  background:radial-gradient(circle,rgba(122,92,255,.28),rgba(255,79,123,.13) 40%,transparent 70%);filter:blur(18px);
+}
+.band h3{font-family:var(--display);font-size:clamp(2rem,4.2vw,3.9rem);line-height:.96;letter-spacing:-.06em;font-weight:620;margin:16px 0 18px;color:#fff;text-wrap:balance}
+.band p{margin:0;max-width:560px;font-size:14px;line-height:1.7;color:#bdb8ab}
+.loss{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:24px;padding:15px 16px;
+  border:1px solid var(--line-dark);border-radius:12px;background:#191a17;
+  font-family:var(--mono);font-size:11px;line-height:1.5;color:#e6e1d5;
+}
+.loss em{font-style:normal;color:#8f8a7c}
+.band-figure{margin:0;min-width:0}
+.band-figure img{width:100%;height:auto;border-radius:13px;border:1px solid #35352f;background:#fff}
+.band-figure figcaption{margin-top:10px;font-family:var(--mono);font-size:9px;letter-spacing:.04em;color:#8f8a7c}
+
+/* ---------- results ---------- */
+.metric-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:40px}
+.metric{padding:21px 24px;border-left:1px solid var(--line);min-width:0}
+.metric:first-child{border-left:0;padding-left:0}
+.metric b{display:block;font-family:var(--display);font-size:clamp(2.6rem,4.9vw,4.3rem);font-weight:650;line-height:.82;letter-spacing:-.07em;margin-bottom:11px}
+.metric span{display:block;font-family:var(--mono);font-size:9px;line-height:1.5;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.results-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.72fr);gap:38px;align-items:start}
+.table-card{margin:0;min-width:0;padding:12px;border:1px solid var(--line);border-radius:18px;background:var(--white)}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e5dfd2;border-radius:9px;background:#fff}
+.table-scroll:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.table-scroll img{width:100%;min-width:560px;height:auto;border:0;border-radius:0;background:#fff}
+.table-hint{display:none}
+@media (max-width:620px){
+  .table-hint{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 2px 9px;font-family:var(--mono);font-size:8px;line-height:1.5;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .table-hint::after{content:"→";font-size:12px;color:var(--ink)}
+}
+.table-card figcaption{margin-top:10px;font-family:var(--mono);font-size:8.5px;line-height:1.55;letter-spacing:.04em;color:var(--muted)}
+.result-rail{border-top:1px solid var(--line)}
+.result-rail .rail-item{padding:17px 0 18px;border-bottom:1px solid var(--line)}
+.result-rail b{display:block;font-family:var(--display);font-size:clamp(1.8rem,3.3vw,2.7rem);font-weight:620;line-height:.9;letter-spacing:-.055em}
+.result-rail span{display:block;margin-top:6px;font-family:var(--mono);font-size:8.5px;line-height:1.5;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.result-rail p{margin:16px 0 0;font-size:11px;line-height:1.6;color:var(--muted)}
+.threshold-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:38px;align-items:stretch;margin-top:44px}
+.hist-card{margin:0;padding:18px;border:1px solid var(--line);border-radius:18px;background:rgba(255,253,248,.55);min-width:0}
+.hist-card img{width:100%;height:auto;border-radius:9px;border:1px solid #e5dfd2;background:#fff}
+.hist-card figcaption{margin-top:10px;font-family:var(--mono);font-size:8.5px;line-height:1.55;letter-spacing:.04em;color:var(--muted)}
+.threshold-card{padding:26px;border-radius:18px;background:var(--ink);color:var(--paper);min-width:0;display:flex;flex-direction:column}
+.threshold-card .beta{font-family:var(--display);font-size:clamp(3.4rem,6vw,5.3rem);font-weight:650;line-height:.82;letter-spacing:-.07em;color:#fff;margin:11px 0 5px}
+.threshold-card .beta small{font-family:var(--mono);font-size:10px;font-weight:400;letter-spacing:.08em;color:#8f8a7c;display:block;margin-top:12px}
+.threshold-card p{margin:13px 0 0;font-size:12px;line-height:1.65;color:#b8b3a6}
+.param-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line-dark);border:1px solid var(--line-dark);border-radius:9px;overflow:hidden;margin:18px 0 0}
+.param-grid div{background:#191a17;padding:9px 10px}
+.param-grid dt{font-family:var(--mono);font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#8f8a7c}
+.param-grid dd{margin:3px 0 0;font-family:var(--mono);font-size:11px;color:#eee9dd}
+.confusion-native{margin:18px 0 0;border-radius:9px;overflow:hidden;background:#fff;color:#151612;font-size:10px}
+.cm-row{display:grid;grid-template-columns:1.65fr .85fr .85fr;border-top:1px solid #ddd6c8}
+.cm-row:first-child{border-top:0;background:#ece7dc;font-family:var(--mono);font-size:8px;letter-spacing:.04em;text-transform:uppercase;color:#615e55}
+.cm-row span{padding:7px 8px;border-left:1px solid #e5dfd2;line-height:1.3}
+.cm-row span:first-child{border-left:0}
+.cm-row b{font-weight:600}
+.cm-note{margin:8px 0 0;font-family:var(--mono);font-size:8px;line-height:1.5;letter-spacing:.03em;color:#8f8a7c}
+
+/* ---------- generalization ---------- */
+.cifar-grid{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,.82fr);gap:42px;align-items:start}
+.cifar-copy{padding-top:6px}
+.cifar-copy h3{font-family:var(--display);font-size:clamp(1.9rem,3.4vw,2.85rem);line-height:.98;letter-spacing:-.052em;font-weight:620;margin:16px 0 16px}
+.cifar-copy p{margin:0 0 15px;font-size:14px;line-height:1.7;color:#55524a}
+.mini-metrics{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:22px}
+.mini-metrics div{background:rgba(255,253,248,.6);padding:13px 14px}
+.mini-metrics b{display:block;font-family:var(--display);font-size:clamp(1.7rem,2.9vw,2.3rem);line-height:.9;letter-spacing:-.05em}
+.mini-metrics span{display:block;margin-top:5px;font-family:var(--mono);font-size:8px;line-height:1.45;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.noise-grid{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:40px;align-items:center;margin-top:44px;padding-top:38px;border-top:1px solid var(--line)}
+.noise-copy h3{font-family:var(--display);font-size:clamp(1.7rem,3.1vw,2.55rem);line-height:.98;letter-spacing:-.05em;font-weight:620;margin:16px 0 14px}
+.noise-copy p{margin:0;font-size:14px;line-height:1.7;color:#55524a}
+.noise-figure{margin:0;min-width:0}
+.noise-figure img{width:100%;height:auto;border:1px solid var(--line);border-radius:14px;background:#fff}
+.noise-figure figcaption{margin-top:9px;font-family:var(--mono);font-size:8.5px;line-height:1.5;letter-spacing:.04em;color:var(--muted)}
+
+/* ---------- limitation ---------- */
+.limit{
+  position:relative;isolation:isolate;overflow:hidden;
+  display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:46px;align-items:end;
+  padding:48px;border-radius:26px;background:var(--ink);color:var(--paper);
+}
+.limit::before{
+  content:"";position:absolute;z-index:-1;left:-10%;top:-55%;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,79,123,.22),rgba(255,159,67,.09) 44%,transparent 70%);filter:blur(20px);
+}
+.limit h2{
+  margin:16px 0 20px;font-family:var(--display);font-size:clamp(2.7rem,5.5vw,5.3rem);
+  font-weight:650;line-height:.9;letter-spacing:-.065em;color:#fff;max-width:680px;
+}
+.limit p{margin:0;max-width:600px;font-size:14px;line-height:1.72;color:#bdb8ab}
+.limit p strong{color:#fff;font-weight:600}
+.compare{border-top:1px solid var(--line-dark)}
+.compare-row{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding:16px 0;border-bottom:1px solid var(--line-dark)}
+.compare-row b{font-family:var(--display);font-size:clamp(2.4rem,4.7vw,4rem);font-weight:650;line-height:.8;letter-spacing:-.065em;color:#fff}
+.compare-row span{font-family:var(--mono);font-size:8.5px;line-height:1.45;letter-spacing:.07em;text-transform:uppercase;color:#8f8a7c;text-align:right;max-width:130px}
+.compare-row.bad b{color:#ff6d4d}
+.limit .mono{color:#8f8a7c}
+
+/* ---------- recipe / cite ---------- */
+.recipe-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.recipe-item{background:rgba(255,253,248,.62);padding:22px;min-width:0}
+.recipe-item b{display:block;font-family:var(--display);font-size:clamp(1.7rem,3.2vw,2.45rem);font-weight:620;line-height:.92;letter-spacing:-.05em}
+.recipe-item span{display:block;margin-top:7px;font-family:var(--mono);font-size:8.5px;line-height:1.5;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.recipe-item p{margin:10px 0 0;font-size:11.5px;line-height:1.55;color:var(--muted)}
+.recipe-note{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:22px}
+.recipe-note p{margin:0;max-width:700px;font-size:12px;line-height:1.65;color:var(--muted)}
+.cite-grid{display:grid;grid-template-columns:minmax(0,.66fr) minmax(0,1.34fr);gap:46px;align-items:start}
+.cite-copy p{margin:0 0 16px;font-size:14px;line-height:1.7;color:#55524a}
+.doi-link{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--ink);padding-bottom:3px;overflow-wrap:anywhere}
+.doi-link:hover{color:var(--red);border-color:var(--red)}
+.bibtex-wrap{position:relative;min-width:0}
+.copy-btn{
+  position:absolute;top:12px;right:12px;z-index:2;
+  border:1px solid #4a4a43;border-radius:999px;background:#22231f;color:#ded9cd;
+  font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  padding:7px 10px;cursor:pointer;transition:background .2s ease,color .2s ease;
+}
+.copy-btn:hover{background:#f4f1e9;color:#111210}
+pre.bibtex{
+  margin:0;padding:26px 24px;border:1px solid #30312c;border-radius:18px;background:var(--ink);color:#e4dfd3;
+  font-family:var(--mono);font-size:11px;line-height:1.72;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.footer{border-top:1px solid var(--line);padding:38px 0 54px;margin-top:0}
+.footer-grid{display:flex;align-items:flex-start;justify-content:space-between;gap:28px;flex-wrap:wrap}
+.footer-brand{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;letter-spacing:-.03em}
+.footer-meta{max-width:540px;font-size:10.5px;line-height:1.7;color:var(--muted);text-align:right}
+.footer-links{display:flex;flex-wrap:wrap;gap:18px;margin-top:22px;font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase}
+.footer-links a{text-decoration:none;color:var(--muted)}
+.footer-links a:hover{color:var(--ink)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1080px){
+  .hero-grid{gap:40px}
+  .problem-grid{gap:46px}
+  .section-head{grid-template-columns:190px minmax(0,1fr);gap:32px}
+}
+@media (max-width:900px){
+  .nav-links{display:none}
+  .hero{padding-top:58px}
+  .hero-grid{grid-template-columns:1fr;gap:44px;align-items:start}
+  .hero-visual{max-width:680px}
+  h1{font-size:clamp(3.6rem,12vw,6.5rem)}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .stat:nth-child(3){border-left:0;padding-left:0}
+  .stat:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .section{padding:82px 0}
+  .section-head{grid-template-columns:1fr;gap:0;margin-bottom:40px}
+  .section-head h2,.section-head .lede{grid-column:1}
+  .section-head .lede{margin-top:18px}
+  .problem-grid,.results-grid,.threshold-grid,.cifar-grid,.cite-grid,.noise-grid{grid-template-columns:1fr;gap:38px}
+  .problem-copy{order:2}
+  .stat-stack{order:1}
+  .steps{grid-template-columns:1fr;border-top:0}
+  .step{border-right:0;border-top:1px solid var(--line);padding:22px 0 0}
+  .step:nth-child(2),.step:nth-child(3){padding-left:0}
+  .step:nth-child(2){margin-top:24px}
+  .step:nth-child(3){margin-top:24px}
+  .split-media,.framework,.band,.limit{grid-template-columns:1fr;gap:32px}
+  .split-media{padding:18px}
+  .framework{padding:18px}
+  .band,.limit{padding:30px;border-radius:22px}
+  .band-figure{order:2}
+  .limit{align-items:start}
+  .compare{max-width:560px}
+  .recipe-grid{grid-template-columns:1fr 1fr}
+  .noise-copy{order:1}
+  .noise-figure{order:2}
+  .cifar-copy{order:1}
+  .cifar-grid .table-card{order:2}
+  .metric-row{grid-template-columns:1fr}
+  .metric{border-left:0;border-top:1px solid var(--line);padding:18px 0 20px}
+  .metric:first-child{border-top:0;padding-top:0}
+  .footer-meta{text-align:left}
+}
+@media (max-width:620px){
+  .wrap{padding:0 20px}
+  .brand-badge{display:none}
+  .nav-inner{height:64px}
+  .nav-cta{padding:9px 12px;font-size:11px}
+  .hero{padding:48px 0 34px}
+  h1{font-size:clamp(3.2rem,14.5vw,4.9rem);letter-spacing:-.07em}
+  .paper-title{font-size:15px}
+  .authors{font-size:11.5px}
+  .affil{font-size:10.5px}
+  .btn{width:100%}
+  .cta-row{gap:8px}
+  .text-link{width:100%;text-align:center;border-bottom:0;padding:12px 0}
+  .stats{margin-top:32px}
+  .stat{padding:17px 14px}
+  .stat:first-child{padding-left:0}
+  .big-stat b{font-size:clamp(3.7rem,16vw,5.2rem)}
+  .big-stat span{max-width:92px;font-size:8px}
+  .dot-field{grid-template-columns:repeat(18,minmax(0,1fr));gap:5px}
+  .dot-caption{display:block}
+  .dot-caption span:last-child{text-align:left;margin-top:4px}
+  .pullquote{font-size:1.35rem}
+  .metric b{font-size:2.9rem}
+  .threshold-card{padding:20px}
+  .limit{padding:24px}
+  .band{padding:24px}
+  .loss{font-size:10px}
+  .spec-list{grid-template-columns:1fr}
+  .recipe-grid{grid-template-columns:1fr}
+  .mini-metrics{grid-template-columns:1fr}
+  .compare-row b{font-size:2.5rem}
+  .footer-grid{display:block}
+  .footer-meta{margin-top:14px}
+  .footer-links{gap:14px}
+  pre.bibtex{font-size:9.5px;padding:52px 16px 20px}
+  .copy-btn{top:10px;right:10px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+/* CSiamese · Research interface v2: editorial precision, modern signal aesthetic */
+:root{--paper:#f4f8fd;--paper-2:#e9f2fc;--white:#fff;--ink:#10213a;--ink-2:#24374f;--muted:#526681;--faint:#72849c;--line:#d8e4ef;--line-dark:#334458;--blue:#317cff;--violet:#7d64f6;--pink:#ef67bd;--orange:#ffbc73;--red:#f57570;--prism:linear-gradient(105deg,#47e2e9,#518cff 38%,#986af8 70%,#f280c4);--max:1290px;--r:23px;--body:Inter,"Noto Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;--display:Inter,"Segoe UI Variable Display",Arial,sans-serif}
+html{scroll-padding-top:85px}
+body{line-height:1.72;background:var(--paper);background-image:radial-gradient(ellipse at 70% 0%,rgba(86,142,240,.065),transparent 60%)}
+::selection{background:#c5e7ff;color:#0d2345}
+.wrap{padding-inline:clamp(20px,3.7vw,58px)}
+.prism-rule{height:3px}
+.site-nav{background:rgba(247,251,255,.89);border-bottom:1px solid rgba(133,163,196,.23);box-shadow:0 5px 26px rgba(19,52,87,.04)}
+.nav-inner{height:74px;gap:clamp(12px,2.2vw,30px)}
+.brand{font-size:17px;letter-spacing:-.055em;color:#102742}
+.brand-mark{background:linear-gradient(150deg,#163d65,#2360a8);color:#e8ffff;border:1px solid rgba(80,178,240,.5);box-shadow:0 4px 16px rgba(25,103,201,.2);border-radius:10px;width:32px;height:32px;font-size:16px}
+.brand-badge{color:#4e698a;border-color:#d9e4f0}
+.nav-links{gap:clamp(12px,2vw,27px);margin-inline-start:auto}
+.nav-links a{font-family:var(--body);font-weight:650;font-size:12px;letter-spacing:.015em;text-transform:none;color:#506580;white-space:nowrap}
+.nav-links a:hover{color:#1e65bf}
+.nav-actions{display:flex;align-items:center;gap:10px;flex:none}
+.language-shell{display:flex;align-items:center;gap:6px;padding:0 10px;border:1px solid #d5e3ef;border-radius:12px;color:#3568aa;background:#fff;box-shadow:0 5px 18px rgba(35,83,155,.06)}
+.language-shell:hover,.language-shell:focus-within{border-color:#7bbce8;box-shadow:0 0 0 3px rgba(71,154,226,.10)}
+.language-shell select{max-width:116px;min-width:95px;padding:10px 3px 10px 1px;outline:0;border:0;background:transparent;color:#244466;cursor:pointer;font-weight:650;font-size:12px;font-family:var(--body)}
+.nav-cta{padding:10px 14px;font-size:12px;border-color:#c2d3e5;color:#164a82;background:linear-gradient(160deg,#fff,#edf6ff);box-shadow:0 5px 18px rgba(45,105,185,.07)}
+.nav-cta:hover{background:#164a82;color:#fff;border-color:#164a82}
+.mobile-nav-pdf{display:none!important}
+.menu-toggle{display:none;flex-direction:column;justify-content:space-between;width:42px;height:40px;padding:11px;background:#fff;border:1px solid #cbdceb;border-radius:12px;cursor:pointer}
+.menu-toggle span{width:100%;height:2px;border-radius:9px;background:#31567e;transition:transform .2s,opacity .2s}
+.menu-toggle[aria-expanded=true] span:first-child{transform:translateY(7px) rotate(45deg)}
+.menu-toggle[aria-expanded=true] span:nth-child(2){opacity:0}
+.menu-toggle[aria-expanded=true] span:last-child{transform:translateY(-7px) rotate(-45deg)}
+.scroll-progress{position:fixed;inset-inline-start:0;top:0;z-index:90;width:0;height:3px;background:var(--prism);pointer-events:none;box-shadow:0 0 13px rgba(88,153,247,.45)}
+.skip-link{position:fixed;z-index:120;top:-100px;inset-inline-start:18px;padding:10px 15px;background:#dcfaff;border-radius:12px;color:#042239;font-weight:700;box-shadow:0 8px 24px #0004;text-decoration:none}
+.skip-link:focus{top:14px}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.hero{padding:clamp(68px,8vw,108px) 0 54px;background:#08172e;color:#eff8ff;border-bottom:1px solid #233e67;position:relative}
+.hero:after{content:"";position:absolute;z-index:-1;inset:0;pointer-events:none;opacity:.37;background-image:linear-gradient(rgba(120,172,237,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(120,172,237,.12) 1px,transparent 1px);background-size:65px 65px;mask-image:linear-gradient(to bottom,black,transparent 85%)}
+.hero::before{right:-160px;top:-240px;width:930px;height:820px;background:radial-gradient(ellipse,rgba(27,107,213,.32),rgba(84,73,210,.16) 46%,transparent 70%);filter:blur(14px)}
+.hero-grid{grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);gap:clamp(25px,4vw,65px);align-items:center}
+.hero h1{font-size:clamp(3.2rem,6.6vw,6.6rem);line-height:.99;letter-spacing:-.065em;max-width:10.5ch;text-wrap:balance}
+.hero h1 .soft{color:transparent;background:linear-gradient(93deg,#9df5f5,#8ebaff 55%,#d3a9ff);-webkit-background-clip:text;background-clip:text}
+.hero .eyebrow{color:#9baec9;letter-spacing:.125em;font-size:11px}
+.hero .paper-title{color:#ebf2fb;max-width:640px;font-size:clamp(15px,1.6vw,19px);line-height:1.55;font-weight:590}
+.hero .paper-title span{color:#94aac5;letter-spacing:.055em;margin-bottom:10px}
+.hero .authors{color:#d5e0ee;font-size:12px;line-height:1.65}
+.hero .affil{color:#91abc8;font-size:11.5px}
+.btn{min-height:44px}
+.hero .btn-dark{background:linear-gradient(115deg,#aaf8ef,#97c5ff);color:#0c2441;border-color:transparent;box-shadow:0 9px 30px rgba(74,187,234,.16)}
+.hero .btn-dark:hover{background:#e4faff;color:#092744}
+.hero .btn-line{border-color:#607c9c;background:rgba(255,255,255,.06);color:#e9f5ff}
+.hero .btn-line:hover{border-color:#b6dafa;background:rgba(155,205,255,.13)}
+.hero .text-link{color:#bdcede;border-color:#405670}
+.hero .text-link:hover{color:#fff;border-color:#fff}
+.figure-card{background:#f9fcff;border:1px solid rgba(163,202,238,.55);box-shadow:0 32px 70px rgba(0,0,0,.3);border-radius:24px;padding:11px}
+.figure-top,.figure-foot{font-size:10px;color:#57718b;letter-spacing:.035em}
+.figure-card img{border-color:#dce6ed;max-height:450px;object-fit:contain}
+.visual-note{border-image:var(--prism) 1;color:#acbfd5;line-height:1.76;font-size:12.5px;max-width:63ch;text-align:justify;text-justify:inter-word}
+.visual-note b{color:#fff}
+.hero .stats{border-color:#334861;margin-top:clamp(50px,7vw,88px)}
+.hero .stat{border-color:#334861;padding-block:24px}
+.hero .stat b{color:#f5fcff;font-size:clamp(1.55rem,2.9vw,2.5rem)}
+.hero .stat span{font-family:var(--body);font-size:10.5px;color:#a3b9d5;letter-spacing:.015em;text-transform:none;line-height:1.6}
+.section{padding:clamp(80px,9vw,125px) 0;scroll-margin-top:74px;border-color:#dae5ef}
+.section:nth-of-type(odd){background:rgba(255,255,255,.43)}
+.eyebrow{color:#4f81b2;letter-spacing:.1em;font-size:10px;font-weight:650}
+.section-head h2{font-size:clamp(2.6rem,5.2vw,5rem);line-height:1.08;letter-spacing:-.062em}
+.section-head .lede{font-size:clamp(15px,1.55vw,18px);line-height:1.84;max-width:68ch}
+.problem-copy p,.step p,.split-copy p,.framework-copy p,.band p,.result-rail p,.threshold-card p,.cifar-copy p,.noise-copy p,.limit p,.recipe-item p,.recipe-note p,.cite-copy p,.section-head .lede,.visual-note,.footer-meta{text-align:justify;text-align-last:start;text-justify:inter-word;hyphens:auto;overflow-wrap:break-word}
+.problem-copy p,.step p,.split-copy p,.framework-copy p,.cifar-copy p,.noise-copy p,.cite-copy p{font-size:clamp(13px,1.18vw,15px);line-height:1.88;color:#435873}
+.problem-copy p,.cifar-copy p,.noise-copy p{max-width:74ch}
+.dot-field i{border-radius:50%}
+.step{min-width:0}
+.step h3,.split-copy h3,.framework-copy h3,.noise-copy h3,.cifar-copy h3{line-height:1.15;text-wrap:balance}
+.step .tags span{white-space:normal}
+.figure-card,.split-media,.framework,.hist-card,.table-card,.noise-figure img{box-shadow:0 15px 55px rgba(31,73,123,.08)}
+.split-media,.framework,.table-card,.hist-card{border-color:#d6e3ed;background:#fff;border-radius:22px}
+.split-media figure,.framework figure,.band figure{min-width:0}
+.split-media img,.framework img,.band-figure img,.hist-card img,.noise-figure img{width:100%;height:auto;max-height:550px;object-fit:contain;background:#fff}
+.framework img{max-height:680px}
+.framework figure{display:flex;flex-direction:column;justify-content:center}
+.band{background:linear-gradient(140deg,#08182c,#12345b);border:1px solid rgba(95,160,234,.3);box-shadow:0 22px 68px rgba(18,43,76,.14)}
+.band .eyebrow{color:#b0d8f0}
+.band h3{color:#f1f9ff}
+.band p{color:#b6cbe1}
+.band-figure img{max-height:370px}
+.metric-row{border-color:#d3e0ed}
+.metric{border-color:#d3e0ed}
+.metric b{color:#1a4773}
+.metric span,.result-rail span,.mini-metrics span,.recipe-item span{letter-spacing:.02em;font-family:var(--body);text-transform:none;font-size:11px;line-height:1.55;color:#61778e}
+.table-card{padding:15px}
+.table-scroll{border-color:#e6edf3}
+.table-scroll img{min-width:550px;max-height:none;object-fit:contain}
+.table-card figcaption,.hist-card figcaption,.split-media figcaption,.framework figcaption,.noise-figure figcaption,.band-figure figcaption{font-family:var(--body);font-size:12px;letter-spacing:0;line-height:1.68;color:#61758a}
+.threshold-card{background:linear-gradient(155deg,#0a1d36,#132b4b);border:1px solid #24445f}
+.threshold-card p{color:#b6c9d9}
+.threshold-card .beta{color:#a5e8ff}
+.threshold-card .beta small{color:#b3c6db}
+.param-grid div{background:#162b45}
+.param-grid dt{color:#9fb7d2}
+.param-grid dd{color:#ebf7ff}
+.limit{background:linear-gradient(120deg,#09182a,#142f51);border:1px solid #284c77}
+.limit h2{color:#fff}
+.limit p{color:#c6d5e6}
+.limit .compare-row.bad b{color:#ff9ca1}
+.compare-row span{color:#b4c2d1}
+.recipe-grid{background:#d6e6f3;border-color:#d6e6f3}
+.recipe-item{background:#fff}
+.recipe-item b{color:#1a4b7e}
+.cite-grid{gap:clamp(28px,4vw,58px)}
+pre.bibtex{padding:67px 24px 25px;background:#08182e;border:1px solid #28466d;color:#d4e9ff;font-size:11.5px;line-height:1.78;direction:ltr;text-align:left!important;unicode-bidi:isolate;overflow:auto;max-height:370px}
+.bib-actions{position:absolute;z-index:3;inset-block-start:15px;inset-inline-end:15px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.copy-btn,.download-bib{position:static;display:inline-flex;align-items:center;min-height:31px;padding:7px 12px;border:1px solid #54779e;border-radius:999px;background:#162d4d;color:#d3eafc;font-family:var(--body);font-size:11px;font-weight:650;line-height:1.1;letter-spacing:0;text-transform:none;text-decoration:none;cursor:pointer}
+.copy-btn:hover,.download-bib:hover{background:#d5efff;color:#143250}
+.footer{background:#ecf4fc;border-color:#d2e2f0;padding-block:45px 58px}
+.footer-meta{max-width:60ch;color:#5e748a}
+.figure-card .image-zoom,.split-media .image-zoom,.framework .image-zoom,.hist-card .image-zoom,.noise-figure .image-zoom,.band-figure .image-zoom,.table-scroll .image-zoom{display:block;width:100%;padding:0;margin:0;border:0;cursor:zoom-in;background:transparent;border-radius:12px}
+.image-zoom:focus-visible{outline:3px solid #3b90db;outline-offset:5px}
+.image-zoom img{transition:filter .18s ease}
+.image-zoom:hover img{filter:contrast(1.025) saturate(1.025)}
+.table-scroll .image-zoom{min-width:550px}
+.image-dialog{padding:0;border:1px solid #89aac8;border-radius:18px;background:#fff;color:#10213a;max-width:min(96vw,1350px);max-height:94vh;width:max-content;box-shadow:0 25px 100px #0007}
+.image-dialog::backdrop{background:rgba(4,14,33,.8);backdrop-filter:blur(8px)}
+.lightbox-toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:9px 12px 9px 18px;background:#eaf3fc;color:#345c84;font-size:12px;font-weight:700}
+.lightbox-toolbar button{background:#fff;border:1px solid #c8d9ea;color:#122f51;border-radius:9px;width:36px;height:34px;cursor:pointer}
+.image-dialog img{display:block;margin:0 auto;max-height:calc(94vh - 125px);max-width:calc(96vw - 30px);height:auto;width:auto;object-fit:contain;background:#fff}
+.image-dialog p{margin:0;padding:9px 15px 13px;max-width:108ch;line-height:1.5;font-size:12px;color:#526a80}
+html[lang=zh] body{font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",var(--body);letter-spacing:.012em}
+html[lang=zh] h1,html[lang=zh] h2,html[lang=zh] h3{letter-spacing:-.045em;line-height:1.17}
+html[lang=zh] .hero h1{max-width:12ch}
+html[lang=zh] .eyebrow,html[lang=zh] .mono,html[lang=zh] .tag{letter-spacing:.035em}
+html[dir=rtl] body{font-family:"Noto Sans Arabic",Tahoma,Arial,sans-serif;line-height:1.9}
+html[dir=rtl] h1,html[dir=rtl] h2,html[dir=rtl] h3{line-height:1.29;letter-spacing:0;text-wrap:balance}
+html[dir=rtl] .hero h1{max-width:16ch}
+html[dir=rtl] .hero .paper-title{font-size:16px}
+html[dir=rtl] .brand,html[dir=rtl] .brand-badge,html[dir=rtl] .brand-mark{direction:ltr}
+html[dir=rtl] .nav-links{margin-inline-start:auto}
+html[dir=rtl] .eyebrow::before{order:1}
+html[dir=rtl] .visual-note{border-left:0;border-right:2px solid #76b5f9;padding-left:0;padding-right:14px;border-image:none}
+html[dir=rtl] .figure-top,html[dir=rtl] .figure-foot{flex-direction:row-reverse}
+html[dir=rtl] .dot-field,html[dir=rtl] .loss,html[dir=rtl] .param-grid,html[dir=rtl] .confusion-native,html[dir=rtl] .table-scroll{direction:ltr}
+html[dir=rtl] .spec-list dd,html[dir=rtl] .stat b,html[dir=rtl] .metric b,html[dir=rtl] .big-stat b,html[dir=rtl] .mini-metrics b,html[dir=rtl] .result-rail b,html[dir=rtl] .threshold-card .beta,html[dir=rtl] .recipe-item b{direction:ltr;unicode-bidi:isolate;text-align:start}
+html[dir=rtl] .threshold-card .beta{text-align:right}
+html[dir=rtl] .language-shell select{direction:ltr}
+html[dir=rtl] .footer-meta{text-align:right}
+html[dir=rtl] .table-hint::after{content:"←"}
+html[dir=rtl] .copy-btn,html[dir=rtl] .download-bib{direction:rtl}
+@media(max-width:1120px){.nav-links{gap:14px}.hero-grid{gap:30px}}
+@media(max-width:930px){
+ .site-nav{z-index:70}
+ .nav-links{display:none;position:absolute;top:calc(100% - 1px);left:clamp(16px,3vw,38px);right:clamp(16px,3vw,38px);flex-direction:column;align-items:stretch;gap:0;padding:11px;background:rgba(249,252,255,.98);border:1px solid #d2e2f0;border-radius:0 0 17px 17px;box-shadow:0 28px 55px #0e2a4940;backdrop-filter:blur(25px)}
+ .nav-links.open{display:flex}
+ .nav-links a{display:block;font-size:14px;min-height:42px;padding:11px 14px;border-radius:9px}
+ .nav-links a:hover{background:#eaf3ff}
+ .nav-links .mobile-nav-pdf{display:block!important}
+ .menu-toggle{display:flex}
+ .hero-grid{grid-template-columns:1fr;gap:38px;align-items:start}
+ .hero h1{max-width:16ch;font-size:clamp(3.3rem,8.8vw,6rem)}
+ .hero-visual{max-width:800px}
+ .hero .stats{margin-top:50px}
+ .section{padding-block:78px}
+ .section-head{margin-bottom:45px}
+ .framework img{max-height:560px}
+}
+@media(max-width:650px){
+ .nav-inner{height:64px}
+ .brand{font-size:15px}
+ .brand-badge{display:none}
+ .nav-cta{display:none}
+ .language-shell{padding-inline:8px}
+ .language-shell select{max-width:104px;min-width:86px;font-size:12px}
+ .hero{padding-top:58px;padding-bottom:38px}
+ .hero h1{font-size:clamp(2.7rem,11.2vw,4.8rem);line-height:1.08}
+ .hero .paper-title{font-size:15.5px}
+ .hero .authors{font-size:11.5px}
+ .hero .affil{font-size:10px}
+ .cta-row{gap:10px}
+ .cta-row .btn{width:100%}
+ .hero .text-link{width:auto;flex:1;text-align:center}
+ .hero .stat{border-color:#334861;padding:17px 15px}
+ .hero .stat:nth-child(1),.hero .stat:nth-child(3){padding-inline-start:0}
+ .hero .stat b{font-size:clamp(1.35rem,6vw,2.3rem)}
+ .hero .stat span{font-size:9.5px}
+ .hero .figure-card{padding:9px}
+ .figure-top,.figure-foot{font-size:9px}
+ .section{padding-block:65px}
+ .section-head h2{font-size:clamp(2.25rem,9vw,3.8rem)}
+ .section-head .lede{font-size:15px}
+ .split-media,.framework{padding:14px}
+ .band,.limit{padding:22px}
+ .table-scroll img,.table-scroll .image-zoom{min-width:520px}
+ .table-hint{font-size:10px}
+ .table-card{padding:12px}
+ .recipe-item{padding:20px}
+ .bib-actions{inset-inline-end:10px;inset-block-start:10px;gap:6px}
+ pre.bibtex{font-size:10px;line-height:1.7;padding:62px 14px 18px}
+ .footer-meta{text-align:start}
+}
+@media(max-width:380px){.language-shell svg{display:none}.menu-toggle{width:39px}.brand-mark{width:29px;height:29px}.nav-inner{gap:8px}.hero h1{font-size:clamp(2.35rem,10.7vw,3.1rem)}.bib-actions a,.bib-actions button{font-size:10px;padding:7px 9px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition-duration:0s!important;animation-duration:0s!important}}
+/* Final optical tuning for non-Latin headlines and supplementary figures */
+html[lang=zh] .hero h1{font-size:clamp(2.9rem,5vw,4.7rem);line-height:1.24;max-width:none;white-space:nowrap}
+html[dir=rtl] .hero h1{font-size:clamp(2.8rem,4.65vw,4.9rem);max-width:19ch;line-height:1.26}
+.roc-figure{margin:40px 0 10px;padding:18px;border:1px solid #d6e3ed;border-radius:22px;background:#fff;box-shadow:0 15px 55px rgba(31,73,123,.07)}
+.roc-heading{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:13px}
+.roc-heading p:last-child{margin:0;color:#61758a;font-family:var(--mono);font-size:10px;letter-spacing:.035em}
+.roc-figure img{display:block;width:100%;max-height:500px;object-fit:contain;background:#fff;border-radius:11px;border:1px solid #dde7ee}
+.roc-figure figcaption{margin-top:11px;font-size:12px;line-height:1.75;color:#58728b}
+.roc-figure .image-zoom{display:block;width:100%;padding:0;border:0;border-radius:11px;cursor:zoom-in;background:#fff}
+.roc-figure .image-zoom:focus-visible{outline:3px solid #3b90db;outline-offset:3px}
+.original-table{max-width:min(100% - 56px,1160px);margin:0 auto 70px;padding:0;border:1px solid #d3e2ef;background:#fff;border-radius:15px;overflow:hidden}
+.original-table>summary{padding:15px 18px;color:#2e6393;font-size:13px;font-weight:700;cursor:pointer}
+.original-table>summary:hover{background:#eff6ff}
+.original-table figure{margin:6px 18px 18px;max-width:750px}
+.original-table figure img{max-height:350px;object-fit:contain}
+html[dir=rtl] .original-table figure img{direction:ltr}
+@media(max-width:650px){html[lang=zh] .hero h1{font-size:clamp(2.25rem,9.75vw,3.2rem);line-height:1.38}.roc-figure{margin-top:24px;padding:10px}.roc-heading{padding:4px}.original-table{max-width:calc(100% - 40px);margin-bottom:35px}.original-table figure{margin-inline:10px}}
+
+</style>
+</head>
+<body>
+<a class="skip-link" href="#top">Skip to main content</a>
+<div aria-hidden="true" class="scroll-progress" id="scrollProgress"></div>
+<div aria-hidden="true" class="prism-rule"></div>
+<header class="site-nav">
+<div class="wrap nav-inner">
+<a aria-label="CSiamese home" class="brand" href="#top">
+<span aria-hidden="true" class="brand-mark">C</span>
+<span>CSiamese</span>
+<span class="brand-badge">NCA ’23</span>
+</a>
+<nav aria-label="Page sections" class="nav-links" id="primaryNav">
+<a href="#problem">Problem</a>
+<a href="#method">Method</a>
+<a href="#results">Results</a>
+<a href="#limits">Limits</a>
+<a href="#cite">Cite</a>
+<a class="mobile-nav-pdf" download="" href="CSiamese.pdf">Download PDF</a>
+</nav>
+<div class="nav-actions">
+<label class="sr-only" for="languageSelect">Interface language</label>
+<div class="language-shell">
+<svg aria-hidden="true" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-width="1.7" viewbox="0 0 24 24" width="18"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c5 5 5 13 0 18M12 3c-5 5-5 13 0 18"></path></svg>
+<select aria-label="Interface language" id="languageSelect">
+<option value="en">English</option><option value="zh">中文</option><option value="ru">Русский</option><option value="fr">Français</option><option value="ar">العربية</option>
+</select>
+</div>
+<a class="nav-cta" href="https://doi.org/10.1007/s00521-023-08507-y" rel="noopener" target="_blank">Read paper <span aria-hidden="true">↗</span></a>
+<button aria-controls="primaryNav" aria-expanded="false" aria-label="Open navigation menu" class="menu-toggle" id="menuToggle" type="button"><span></span><span></span><span></span></button>
+</div>
+</div>
+</header>
+<main id="top">
+<section aria-labelledby="hero-title" class="hero">
+<div class="wrap hero-grid">
+<div class="hero-copy">
+<p class="eyebrow">Semi-supervised anomaly detection · gas turbines</p>
+<h1 id="hero-title">Learn normal.<br/><span class="soft">Catch the rest.</span></h1>
+<p class="paper-title"><span>Research paper · Neural Computing and Applications 35, 16403–16427 (2023)</span>CSiamese: a novel semi-supervised anomaly detection framework for gas turbines via reconstruction similarity</p>
+<p class="authors">Dan Liu · Shisheng Zhong · Lin Lin · Minghang Zhao · Xuyun Fu · Xueyun Liu</p>
+<p class="affil">Harbin Institute of Technology · School of Mechatronics Engineering, Harbin · School of Ocean Engineering, Weihai</p>
+<div class="cta-row">
+<a class="btn btn-dark" href="https://doi.org/10.1007/s00521-023-08507-y" rel="noopener" target="_blank">Read the paper <span aria-hidden="true" class="arrow">↗</span></a>
+<a class="btn btn-line" href="#results">See the evidence</a>
+<a class="text-link" href="#cite">Cite this work</a>
+<a class="text-link pdf-link" download="" href="CSiamese.pdf">Download PDF</a>
+</div>
+</div>
+<div class="hero-visual">
+<figure class="figure-card">
+<div class="figure-top">
+<span class="tag">Fig. 01 / the imbalance</span>
+<span>2-D feature space</span>
+</div>
+<button aria-label="Enlarge figure" class="image-zoom" type="button"><img alt="Two-dimensional visualization of the high-dimensional turbine monitoring data, with thousands of blue normal points and a sparse set of red abnormal points." decoding="async" height="981" loading="eager" src="images/fig1_scatter.png" width="1372"/></button>
+<div class="figure-foot">
+<span><span style="color:#2f6bff">●</span> normal windows</span>
+<span><span style="color:#f04a2d">▼</span> abnormal windows</span>
+</div>
+</figure>
+<p class="visual-note"><b>36 red points.</b> 7,593 blue ones. The abnormal class is not just rare — it overlaps the normal cloud, so the boundary cannot be drawn from labels alone.</p>
+</div>
+</div>
+<div aria-label="Key facts" class="wrap stats">
+<div class="stats-grid">
+<div class="stat"><b>97.53%</b><span>AUROC on the gas-turbine test set</span></div>
+<div class="stat"><b>+0.91 pts</b><span>AUROC over a CAE alone</span></div>
+<div class="stat"><b>88.89%</b><span>abnormal-window recall at the learned threshold</span></div>
+<div class="stat"><b>7,629</b><span>sliding-window samples from 36 turbines</span></div>
+</div>
+</div>
+</section>
+<section aria-labelledby="problem-title" class="section" id="problem">
+<div class="wrap">
+<div class="section-head">
+<p class="eyebrow">01 / The gap</p>
+<h2 id="problem-title">One class is all<br/>you get.</h2>
+<p class="lede">Turbine monitoring data is not merely imbalanced. It is <strong>99.53% normal</strong>, and the abnormal windows sit inside the normal cloud. CSiamese is built for that world: train on health, then ask how well health can reconstruct what it sees.</p>
+</div>
+<div class="problem-grid">
+<div aria-label="Dataset imbalance" class="stat-stack">
+<div class="big-stat"><b>7,593</b><span>normal windows in the dataset</span></div>
+<div class="big-stat hot"><b>36</b><span>abnormal windows in the dataset</span></div>
+<div class="ratio"><b>1 in 212</b><span>windows is abnormal — a prevalence of 0.47%</span></div>
+</div>
+<div class="problem-copy">
+<p>The paper collects real cruise data from <strong>36 gas turbines</strong> at an Asia-based airline. Three engine parameters — Delta Exhaust Gas Temperature, Delta Fuel Flow and Delta Core Speed — are cut into <strong>10 × 3 sliding windows</strong> with a step of five cycles.</p>
+<p>Two failure modes follow. A supervised model sees a class imbalance and learns to favour “normal.” And because abnormal windows are widely scattered, a new fault type may not resemble anything in the training labels at all.</p>
+<div aria-hidden="true" class="dot-field" data-count="212" data-hot="137" id="dot-field"></div>
+<div class="dot-caption"><span>Each dot ≈ one window</span><span>Red = the 0.47% abnormal class</span></div>
+<blockquote class="pullquote">“Even if all the test samples are diagnosed as normal, the overall accuracy is still as high as 98.83%.”<span>Paper, Section 3.1.3 — why AUROC and a confusion matrix replace accuracy</span></blockquote>
+</div>
+</div>
+</div>
+</section>
+<section aria-labelledby="method-title" class="section" id="method">
+<div class="wrap">
+<div class="section-head">
+<p class="eyebrow">02 / Method</p>
+<h2 id="method-title">Reconstruct.<br/>Compare. Decide.</h2>
+<p class="lede">Three moves replace a supervised classifier. A convolutional auto-encoder learns what normal looks like, a Siamese network learns how to measure the distance between an input and its reconstruction, and a maximum-likelihood threshold turns that distance into a decision.</p>
+</div>
+<div class="steps">
+<article class="step">
+<div class="step-num"><span>01</span></div>
+<h3>Reconstruct the normal</h3>
+<p>A CAE is trained only on normal windows. It learns an encoder–decoder mapping whose L1 reconstruction error is minimised for health, so an abnormal component has little influence on the gradient.</p>
+<div class="tags"><span>Conv 4 × 4</span><span>L1 loss</span><span>latent 128</span></div>
+</article>
+<article class="step">
+<div class="step-num"><span>02</span></div>
+<h3>Compare in latent space</h3>
+<p>The input and its reconstruction go through a shared-weight Siamese encoder. Their Euclidean distance becomes a reconstruction-similarity score — a learned metric that is less brittle than a raw pixel error.</p>
+<div class="tags"><span>shared weights</span><span>positive pairs</span><span>noise-aware</span></div>
+</article>
+<article class="step">
+<div class="step-num"><span>03</span></div>
+<h3>Decide with a threshold</h3>
+<p>Normal training scores are fitted with an Alpha distribution by maximum likelihood. The upper end of the 90% confidence interval becomes β: below it, normal; at or above it, abnormal.</p>
+<div class="tags"><span>MLETS</span><span>β = 0.1270</span><span>90% CI</span></div>
+</article>
+</div>
+<div class="split-media">
+<figure>
+<button aria-label="Enlarge figure" class="image-zoom" type="button"><img alt="Schematic of the convolutional auto-encoder: an encoder stack of convolution, batch normalisation and LeakyReLU feeding a decoder stack of deconvolution, batch normalisation, ReLU and tanh." decoding="async" height="2103" loading="lazy" src="images/fig2_cae.jpg" width="2569"/></button>
+<figcaption>Fig. 02 — one reconstruction path. The encoder and decoder mirror each other; the latent representation becomes the anchor for the Siamese branch.</figcaption>
+</figure>
+<div class="split-copy">
+<p class="eyebrow">Inside the CAE</p>
+<h3>Compression is the prior.</h3>
+<p>The encoder is a stack of convolution, batch normalisation and LeakyReLU layers; the decoder reverses it with deconvolutions, ReLU and a final tanh. The architecture follows the DCGAN pattern, and the paper uses an L1 norm because it produces a less blurry reconstruction than L2.</p>
+<ul class="mini-list">
+<li><span>Encoder input</span><b>10 × 3 window</b></li>
+<li><span>CAE latent width</span><b>128</b></li>
+<li><span>Training epochs (CAE / Siamese)</span><b>4 / 6</b></li>
+</ul>
+</div>
+</div>
+<div class="framework">
+<figure class="framework-figure">
+<button aria-label="Enlarge figure" class="image-zoom" type="button"><img alt="The full CSiamese framework: data preparation, CAE training, Siamese training with triangle loss, and threshold selection with MLETS." decoding="async" height="3480" loading="lazy" src="images/fig4_framework.jpg" width="2582"/></button>
+<figcaption>Fig. 04 — the complete pipeline, from sliding windows to a normal/abnormal decision.</figcaption>
+</figure>
+<div class="framework-copy">
+<p class="eyebrow">The whole system</p>
+<h3>A reconstruction pipeline with a learned judge.</h3>
+<p>The CAE is trained first, using only normal samples. Its reconstruction of a window is paired with the original input — a positive pair by construction. The Siamese network is then trained on those pairs, with weights transferred from the trained encoder.</p>
+<p>At test time, the score is the distance between the two embeddings. No negative pairs are needed to train the similarity metric; the threshold handles the decision.</p>
+<dl class="spec-list">
+<div><dt>Window</dt><dd>10 × 3, step 5</dd></div>
+<div><dt>Pair</dt><dd>input ↔ reconstruction</dd></div>
+<div><dt>Similarity</dt><dd>Euclidean in latent space</dd></div>
+<div><dt>Threshold</dt><dd>MLETS, β = 0.1270</dd></div>
+</dl>
+</div>
+</div>
+<div class="band">
+<div>
+<p class="eyebrow light">Why triangle loss</p>
+<h3>Positive pairs can teach a network to say nothing.</h3>
+<p>With only positive pairs, contrastive loss has a trivial minimum: map everything to a constant, and the distance is zero. The triangle loss adds the path through the encoder’s latent anchor <em>h</em>, creating an upper bound that cannot be minimised by collapse.</p>
+<div aria-label="Triangle loss inequality" class="loss">
+<span>d(F<sub>W</sub>(x), h)</span><em>+</em><span>d(h, F<sub>W</sub>(x̂))</span><em>≥</em><span>d(F<sub>W</sub>(x), F<sub>W</sub>(x̂))</span>
+</div>
+</div>
+<figure class="band-figure">
+<button aria-label="Enlarge figure" class="image-zoom" type="button"><img alt="Diagram of the developed triangle loss: the input and its reconstruction are encoded into a shared latent space, with the encoder latent representation anchoring the triangle." decoding="async" height="1852" loading="lazy" src="images/fig3_triangle.jpg" width="3430"/></button>
+<figcaption>Fig. 03 — the input embedding, latent anchor and reconstruction embedding form a triangle.</figcaption>
+</figure>
+</div>
+</div>
+</section>
+<section aria-labelledby="results-title" class="section" id="results">
+<div class="wrap">
+<div class="section-head">
+<p class="eyebrow">03 / Evidence</p>
+<h2 id="results-title">The gain is small.<br/>The ordering is not.</h2>
+<p class="lede">On the held-out gas-turbine set, CSiamese reaches <strong>97.53% AUROC</strong>. The margin over a CAE is 0.91 points — modest in isolation, but consistent across the comparison and paired with a usable decision threshold.</p>
+</div>
+<div class="metric-row">
+<div class="metric"><b>97.53%</b><span>AUROC · CSiamese (proposed)</span></div>
+<div class="metric"><b>+0.91</b><span>AUROC points over the CAE · +5.84 over the DAE</span></div>
+<div class="metric"><b>1.84 ms</b><span>average inference time per 64-sample batch</span></div>
+</div>
+<div class="results-grid">
+<figure class="table-card">
+<p class="table-hint">Swipe for AUROC + inference time</p>
+<div aria-label="Table 4: AUROC and inference time comparison" class="table-scroll" role="region" tabindex="0">
+<button aria-label="Enlarge figure" class="image-zoom" type="button"><img alt="Table 4 comparing AUROC and inference time for OC-SVM variants, GMM variants, DAE, CAE, CSiamese with random weights, and the proposed CSiamese on the gas turbine dataset." decoding="async" height="1282" loading="lazy" src="images/table4.png" width="1682"/></button>
+</div>
+<figcaption>Table 4 — the full comparison. CSiamese is best on AUROC; the fastest method is OC-SVM(Poly) at 0.0870 ms per batch.</figcaption>
+</figure>
+<aside aria-label="How to read the result" class="result-rail">
+<div class="rail-item"><b>16 / 18</b><span>abnormal test windows detected</span></div>
+<div class="rail-item"><b>1,364 / 1,523</b><span>normal test windows correctly cleared</span></div>
+<div class="rail-item"><b>89.56%</b><span>true negative rate on the test set</span></div>
+<p>AUROC is threshold-free: 50% is chance, 100% is a perfect ranking. The confusion matrix uses the learned β, so it reflects an operating point rather than a best-case sweep.</p>
+</aside>
+</div>
+<div class="threshold-grid">
+<figure class="hist-card">
+<button aria-label="Enlarge figure" class="image-zoom" type="button"><img alt="Histogram of reconstruction similarity scores for normal training windows, with an Alpha distribution fit peaking near 0.06 and a long right tail." decoding="async" height="1068" loading="lazy" src="images/fig5_hist.png" width="1332"/></button>
+<figcaption>Fig. 05 — normal training scores and the fitted Alpha density. The 90% interval ends at 0.1270, which becomes β.</figcaption>
+</figure>
+<div class="threshold-card">
+<p class="eyebrow light">The decision rule</p>
+<div class="beta">0.1270<small>β — upper limit of the 90% confidence interval</small></div>
+<p>The threshold is not tuned on abnormal data. It is read off the fitted distribution of normal scores, so it remains available when the training set contains only healthy examples.</p>
+<dl class="param-grid">
+<div><dt>α</dt><dd>3.3068</dd></div>
+<div><dt>μ</dt><dd>-0.0529</dd></div>
+<div><dt>c</dt><dd>0.3646</dd></div>
+</dl>
+<div aria-label="Table 5 confusion matrix of the proposed threshold" class="confusion-native" role="table">
+<div class="cm-row" role="row"><span role="columnheader">Actual class</span><span role="columnheader">Pred. abnormal</span><span role="columnheader">Pred. normal</span></div>
+<div class="cm-row" role="row"><span role="cell"><b>Validation</b> — abnormal</span><span role="cell">16</span><span role="cell">2</span></div>
+<div class="cm-row" role="row"><span role="cell"><b>Validation</b> — normal</span><span role="cell">149</span><span role="cell">1,375</span></div>
+<div class="cm-row" role="row"><span role="cell"><b>Test</b> — abnormal</span><span role="cell">16</span><span role="cell">2</span></div>
+<div class="cm-row" role="row"><span role="cell"><b>Test</b> — normal</span><span role="cell">159</span><span role="cell">1,364</span></div>
+</div>
+<p class="cm-note">Table 5 — validation TNR 90.22%, test TNR 89.56%; TPR 88.89% in both.</p>
+</div>
+</div>
+</div>
+<details class="original-table"><summary>View the original published Table 5</summary><figure class="hist-card"><button aria-label="Enlarge figure" class="image-zoom" type="button"><img alt="Published Table 5: confusion matrix for validation and test sets; 16 detected anomalies and two misses in each." decoding="async" height="590" loading="lazy" src="images/table5.png" width="1260"/></button><figcaption>Table 5 — original confusion matrix reproduced from the published article.</figcaption></figure></details>
+</section>
+<section aria-labelledby="generalization-title" class="section" id="generalization">
+<div class="wrap">
+<div class="section-head">
+<p class="eyebrow">04 / Generalization</p>
+<h2 id="generalization-title">A second domain.<br/>Same direction.</h2>
+<p class="lede">CIFAR-10 is the paper’s stress test outside gas turbines: one class is held out as abnormal, the other nine are normal. CSiamese wins <strong>7 of 10</strong> held-out classes and keeps its lead as noise increases.</p>
+</div>
+<div class="cifar-grid">
+<figure class="table-card">
+<p class="table-hint">Swipe for all ten classes</p>
+<div aria-label="Table 7: CIFAR-10 AUROC comparison" class="table-scroll" role="region" tabindex="0">
+<button aria-label="Enlarge figure" class="image-zoom" type="button"><img alt="Table 7 comparing DAE, CAE, CSiamese with random weights, and CSiamese across the ten CIFAR-10 abnormal classes, with average AUROC and count of wins." decoding="async" height="976" loading="lazy" src="images/table7.png" width="1600"/></button>
+</div>
+<figcaption>Table 7 — CIFAR-10, one-vs-rest. Bold marks the best method per class; CSiamese also has the best average (80.07%).</figcaption>
+</figure>
+<div class="cifar-copy">
+<p class="eyebrow">Beyond turbines</p>
+<h3>The same score travels.</h3>
+<p>No architecture is changed for the image experiment. One class is treated as abnormal and the rest as normal, with no abnormal examples in training. The learned similarity still separates the held-out class better than a raw CAE reconstruction error on seven of ten labels.</p>
+<p>The exceptions are informative: a car can reconstruct well from a model trained on ships and trucks, so its anomaly score stays low. Similarity is only as good as the normal manifold it has seen.</p>
+<div class="mini-metrics">
+<div><b>80.07%</b><span>mean AUROC · CSiamese</span></div>
+<div><b>+2.29 pts</b><span>over CAE’s 77.78%</span></div>
+<div><b>7 / 10</b><span>classes won</span></div>
+<div><b>75.02%</b><span>at the strongest noise level</span></div>
+</div>
+</div>
+</div>
+<figure class="roc-figure">
+<div class="roc-heading"><p class="eyebrow">Class-by-class comparison</p><p>Fig. 06 / CIFAR-10 · AUROC</p></div>
+<button aria-label="Enlarge figure" class="image-zoom" type="button"><img alt="Figure 6: AUROC bar comparison of DAE, CAE, CSiamese with random weights and the proposed CSiamese for each CIFAR-10 anomaly class." decoding="async" height="1207" loading="lazy" src="images/fig6_roc.png" width="1965"/></button>
+<figcaption>Fig. 06 — AUROC for each held-out CIFAR-10 class. CSiamese leads on seven of ten classes, but cars and trucks remain difficult.</figcaption>
+</figure>
+<div class="noise-grid">
+<div class="noise-copy">
+<p class="eyebrow">Robustness</p>
+<h3>The lead survives the noise.</h3>
+<p>Additive white Gaussian noise is injected at four variances. At the strongest setting (1.0), CSiamese averages 75.02% AUROC; the CAE falls to 56.02% and the DAE to 52.02%. The Siamese branch pulls the noisy input and its reconstruction together instead of asking a raw distance to do all the work.</p>
+</div>
+<figure class="noise-figure">
+<button aria-label="Enlarge figure" class="image-zoom" type="button"><img alt="Bar chart of average CIFAR-10 AUROC for DAE, CAE, CSiamese with random weights, and CSiamese at noise variances 0.01, 0.0625, 0.25 and 1.0." decoding="async" height="1214" loading="lazy" src="images/fig7_noise.png" width="1965"/></button>
+<figcaption>Fig. 07 — average AUROC across four noise levels. The ordering is stable; the absolute scores fall as variance rises.</figcaption>
+</figure>
+</div>
+</div>
+</section>
+<section aria-labelledby="limits-title" class="section" id="limits">
+<div class="wrap">
+<div class="limit">
+<div>
+<p class="eyebrow light">05 / The boundary</p>
+<h2 id="limits-title">When similarity lies.</h2>
+<p>The car class is the honest failure case. A car is visually close to ships and trucks, so a CAE trained on those normal classes reconstructs it well — and the Siamese network further pulls the input toward that reconstruction. The anomaly score stays low, and the detector misses it.</p>
+<p style="margin-top:16px">The paper’s own conclusion: future work should <strong>model the diversity of normal components explicitly</strong> and weaken the representation capacity of abnormal components. Similarity is a useful prior, not a universal boundary.</p>
+</div>
+<div aria-label="Car class comparison" class="compare">
+<div class="compare-row"><b>86.82%</b><span>CAE · car as abnormal class</span></div>
+<div class="compare-row bad"><b>67.97%</b><span>CSiamese · car as abnormal class</span></div>
+<p class="mono" style="margin-top:14px">One failure mode, stated plainly. The average still rises; the tail matters.</p>
+</div>
+</div>
+</div>
+</section>
+<section aria-labelledby="reproduce-title" class="section" id="reproduce">
+<div class="wrap">
+<div class="section-head">
+<p class="eyebrow">06 / Reproduce</p>
+<h2 id="reproduce-title">The recipe,<br/>in six settings.</h2>
+<p class="lede">Everything needed to read the method at a glance. The full architecture tables and hyperparameter sweeps live in Appendices A and B of the paper.</p>
+</div>
+<div class="recipe-grid">
+<div class="recipe-item"><b>10 × 3</b><span>sliding window</span><p>Three sensor channels, ten cycles per window, moved five cycles at a time.</p></div>
+<div class="recipe-item"><b>128</b><span>latent dimension</span><p>The CAE and Siamese encoder share the same latent width.</p></div>
+<div class="recipe-item"><b>64</b><span>batch size</span><p>Adam, initial learning rate 0.0002, β₁ = 0.5, β₂ = 0.999.</p></div>
+<div class="recipe-item"><b>4 / 6</b><span>training epochs</span><p>Four epochs for the CAE, then six for the Siamese network.</p></div>
+<div class="recipe-item"><b>0.1270</b><span>decision threshold</span><p>Upper limit of the 90% confidence interval from MLETS.</p></div>
+<div class="recipe-item"><b>0.01–1.0</b><span>noise variance</span><p>Four AWGN settings used in the CIFAR-10 robustness study.</p></div>
+</div>
+<div class="recipe-note">
+<p>The paper reports the full training configuration and architecture tables in its appendices. No public code repository is linked in the paper; this page is a reading aid, not an official implementation.</p>
+<a class="text-link" href="https://doi.org/10.1007/s00521-023-08507-y" rel="noopener" target="_blank">Open the paper ↗</a>
+</div>
+</div>
+</section>
+<section aria-labelledby="cite-title" class="section" id="cite">
+<div class="wrap">
+<div class="section-head">
+<p class="eyebrow">07 / Citation</p>
+<h2 id="cite-title">Borrow the idea.<br/>Cite the paper.</h2>
+</div>
+<div class="cite-grid">
+<div class="cite-copy">
+<p>If CSiamese is useful to your work, cite the journal version. The DOI resolves to the publisher record.</p>
+<a class="doi-link" href="https://doi.org/10.1007/s00521-023-08507-y" rel="noopener" target="_blank">doi.org/10.1007/s00521-023-08507-y <span aria-hidden="true">↗</span></a>
+<p style="margin-top:20px;font-size:11px;color:var(--muted)">Neural Computing and Applications, Vol. 35, No. 22, pp. 16403–16427, 2023.</p>
+</div>
+<div class="bibtex-wrap">
+<div class="bib-actions"><button class="copy-btn" id="copy-bibtex" type="button">Copy BibTeX</button><a class="download-bib" download="CSiamese.bib" href="CSiamese.bib">Download .bib</a></div>
+<pre class="bibtex" dir="ltr" id="bibtex">@article{Liu2023,
+  author  = {Liu, Dan and Zhong, Shisheng and Lin, Lin and Zhao, Minghang and Fu, Xuyun and Liu, Xueyun},
+  title   = {CSiamese: a novel semi-supervised anomaly detection framework for gas turbines via reconstruction similarity},
+  journal = {Neural Computing and Applications},
+  year    = {2023},
+  volume  = {35},
+  number  = {22},
+  pages   = {16403--16427},
+  doi     = {10.1007/s00521-023-08507-y},
+  url     = {https://doi.org/10.1007/s00521-023-08507-y},
+  issn    = {1433-3058}
+}</pre>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="footer">
+<div class="wrap">
+<div class="footer-grid">
+<div>
+<div class="footer-brand"><span aria-hidden="true" class="brand-mark">C</span> CSiamese</div>
+<div class="footer-links">
+<a href="#problem">Problem</a>
+<a href="#method">Method</a>
+<a href="#results">Results</a>
+<a href="#cite">Cite</a>
+<a href="https://doi.org/10.1007/s00521-023-08507-y" rel="noopener" target="_blank">DOI ↗</a>
+<a download="" href="CSiamese.pdf">PDF</a>
+</div>
+</div>
+<p class="footer-meta">A project page for “CSiamese: a novel semi-supervised anomaly detection framework for gas turbines via reconstruction similarity,” Neural Computing and Applications, 2023. Figures and tables are reproduced from the paper for research presentation.</p>
+</div>
+</div>
+</footer>
+<dialog aria-label="Image preview" class="image-dialog" id="imageDialog">
+<div class="lightbox-toolbar"><span id="lightboxTitle">Figure preview</span><button aria-label="Close image preview" id="lightboxClose" type="button">✕</button></div>
+<img alt="" height="800" id="lightboxImage" src="" width="1200"/>
+<p id="lightboxCaption"></p>
+</dialog>
+<script defer="" src="i18n.js"></script>
+</body>
+</html>
